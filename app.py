@@ -15,30 +15,39 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
 
+# テンプレートの読み込み
+dot_template = cv2.imread('template_dot_menu.png', cv2.IMREAD_GRAYSCALE)
+plus_template = cv2.imread('template_plus_icon.png', cv2.IMREAD_GRAYSCALE)
+
+if dot_template is None or plus_template is None:
+    print("テンプレート読み込みに失敗しました。")
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def crop_ui_from_image(image_path):
+def match_template_y(gray_img, template):
+    res = cv2.matchTemplate(gray_img, template, cv2.TM_CCOEFF_NORMED)
+    _, max_val, _, max_loc = cv2.minMaxLoc(res)
+    return max_loc[1], max_val
+
+def crop_ui_using_templates(image_path):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
 
-    # 水平方向（上下）の黒帯検出（左右方向の検出は無視）
-    horizontal_projection = np.sum(thresh == 0, axis=1)
-    height, width = img.shape[:2]
-    top, bottom = 0, height - 1
-    threshold = width * 0.6  # 横幅の60%以上が暗ければ黒帯とみなす
+    dot_y, dot_score = match_template_y(gray, dot_template)
+    plus_y, plus_score = match_template_y(gray, plus_template)
 
-    for i, val in enumerate(horizontal_projection):
-        if val < threshold:
-            top = i
-            break
-    for i in range(len(horizontal_projection)-1, -1, -1):
-        if horizontal_projection[i] < threshold:
-            bottom = i
-            break
+    print(f"dot_y: {dot_y} (score: {dot_score:.3f}), plus_y: {plus_y} (score: {plus_score:.3f})")
 
-    cropped = img[top:bottom, :]  # 横方向は削らない
+    top = dot_y + 60
+    bottom = plus_y - 30
+
+    if bottom <= top or dot_score < 0.3 or plus_score < 0.3:
+        print("テンプレート検出に失敗。バックアップ範囲で切り取り")
+        top = 180
+        bottom = img.shape[0] - 140
+
+    cropped = img[top:bottom, :]
     return Image.fromarray(cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB))
 
 @app.route('/', methods=['GET', 'POST'])
@@ -53,7 +62,7 @@ def index():
                 file_path = os.path.join(UPLOAD_FOLDER, filename)
                 file.save(file_path)
 
-                cropped_img = crop_ui_from_image(file_path)
+                cropped_img = crop_ui_using_templates(file_path)
                 result_path = os.path.join(RESULT_FOLDER, filename.rsplit('.', 1)[0] + ".png")
                 cropped_img.save(result_path, format='PNG')
                 result_files.append(result_path)
