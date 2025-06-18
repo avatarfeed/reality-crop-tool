@@ -1,0 +1,25 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>REALITY Crop Tool</title>
+</head>
+<body>
+  <h2>Upload REALITY Screenshot</h2>
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/*" required>
+    <button type="submit">Upload and Crop</button>
+  </form>
+  <br>
+  <img id="result" style="max-width: 100%;">
+  <script>
+    document.getElementById('upload-form').onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const res = await fetch('/crop', { method: 'POST', body: formData });
+      const blob = await res.blob();
+      document.getElementById('result').src = URL.createObjectURL(blob);
+    };
+  </script>
+</body>
+</html>
