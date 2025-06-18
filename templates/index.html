@@ -1,26 +1,7 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>REALITY Crop Tool</title>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f7f7f7; }
-        h1 { color: #333; }
-        .note { font-size: 0.9em; color: #666; margin-bottom: 20px; }
-        input[type=file] { margin: 10px 0; }
-        button { padding: 10px 20px; font-size: 16px; }
-        .container { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>REALITY 投稿画像 自動切り出しツール</h1>
-        <p class="note">スクリーンショット画像をアップロードしてください（複数可）<br>※ 現在、画像は1枚あたり <strong>5MB まで</strong> 対応しています</p>
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="file" multiple required>
-            <br>
-            <button type="submit">アップロードして切り出し</button>
-        </form>
-    </div>
-</body>
-</html>
+<!doctype html>
+<title>REALITYスクショ切り出し</title>
+<h1>アバターフィード画像をアップロード</h1>
+<form method=post enctype=multipart/form-data>
+  <input type=file name=file>
+  <input type=submit value=アップロードして切り出し>
+</form>

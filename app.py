@@ -1,34 +1,43 @@
-
-import io
+from flask import Flask, request, send_file, render_template
+from werkzeug.utils import secure_filename
+import os
 import cv2
-import numpy as np
-from fastapi import FastAPI, File, UploadFile
-from fastapi.responses import StreamingResponse
 from PIL import Image
+import numpy as np
 
-app = FastAPI()
+app = Flask(__name__)
+UPLOAD_FOLDER = "uploads"
+PROCESSED_FOLDER = "processed"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-def detect_feed_area(image: np.ndarray) -> np.ndarray:
-    # 画像の高さと幅を取得
-    h, w, _ = image.shape
+@app.route("/", methods=["GET", "POST"])
+def upload_file():
+    if request.method == "POST":
+        if "file" not in request.files:
+            return "ファイルが見つかりませんでした", 400
+        file = request.files["file"]
+        if file.filename == "":
+            return "ファイルが選択されていません", 400
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
 
-    # アバター画像下端（上端からおおよそ170px）
-    top_crop = 170
-    # ハート・コメントアイコン上端（下端からおおよそ150px）
-    bottom_crop = 150
+        # 画像を読み込んで、上下UIを除いた中央部のみを切り出す
+        img = cv2.imread(filepath)
+        height, width, _ = img.shape
+        top_crop = int(height * 0.10)
+        bottom_crop = int(height * 0.11)
+        cropped_img = img[top_crop:height - bottom_crop, :]
 
-    # 上下を切り取り
-    cropped = image[top_crop:h - bottom_crop, :]
-    return cropped
+        processed_path = os.path.join(PROCESSED_FOLDER, "cropped_" + filename.split('.')[0] + ".png")
+        cv2.imwrite(processed_path, cropped_img)
 
-@app.post("/crop")
-async def crop_image(file: UploadFile = File(...)):
-    contents = await file.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return send_file(processed_path, as_attachment=True)
 
-    cropped_img = detect_feed_area(img)
+    return render_template("index.html")
 
-    # PNG形式で保存
-    _, png_img = cv2.imencode(".png", cropped_img)
-    return StreamingResponse(io.BytesIO(png_img.tobytes()), media_type="image/png")
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
