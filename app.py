@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024  # 20MB max total upload
 
 MAX_FILES = 5
-MAX_FILE_SIZE_MB = 3
+MAX_FILE_SIZE_MB = 5
 
 def crop_image(image_path):
     # 仮の切り出し処理：画像中央を80%範囲でトリミング
