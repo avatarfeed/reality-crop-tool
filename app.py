@@ -22,7 +22,7 @@ def allowed_file(filename):
 def crop_ui_from_image(image_path):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 20, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
 
     # 水平投影で上下の黒帯を検出
     horizontal_projection = np.sum(thresh == 0, axis=1)
