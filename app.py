@@ -38,7 +38,7 @@ def index():
 
                     # サイズ制限チェック
                     if os.stat(input_path).st_size > MAX_FILE_SIZE_MB * 1024 * 1024:
-                        return f"{filename} は3MBを超えています。", 400
+                        return f"{filename} は5MBを超えています。", 400
 
                     # 画像処理
                     cropped = crop_image(input_path)
