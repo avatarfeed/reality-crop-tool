@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, render_template, request, send_file
 from werkzeug.utils import secure_filename
 from PIL import Image
 import cv2
@@ -11,7 +11,6 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 RESULT_FOLDER = 'results'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-MAX_FILE_SIZE_MB = 5
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(RESULT_FOLDER, exist_ok=True)
@@ -22,12 +21,13 @@ def allowed_file(filename):
 def crop_ui_from_image(image_path):
     img = cv2.imread(image_path)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    _, thresh = cv2.threshold(gray, 50, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY)
 
-    # 水平投影で上下の黒帯を検出
+    # 水平方向（上下）の黒帯検出（左右方向の検出は無視）
     horizontal_projection = np.sum(thresh == 0, axis=1)
-    top, bottom = 0, img.shape[0] - 1
-    threshold = img.shape[1] * 0.6  # 60%以上黒ならUIとみなす
+    height, width = img.shape[:2]
+    top, bottom = 0, height - 1
+    threshold = width * 0.6  # 横幅の60%以上が暗ければ黒帯とみなす
 
     for i, val in enumerate(horizontal_projection):
         if val < threshold:
@@ -38,7 +38,7 @@ def crop_ui_from_image(image_path):
             bottom = i
             break
 
-    cropped = img[top:bottom, :]
+    cropped = img[top:bottom, :]  # 横方向は削らない
     return Image.fromarray(cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB))
 
 @app.route('/', methods=['GET', 'POST'])
